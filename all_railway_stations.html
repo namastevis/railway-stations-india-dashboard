@@ -1,0 +1,795 @@
+<!DOCTYPE html>
+<html lang="en">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>Indian Railway Stations Dashboard</title>
+    <link
+      href="https://cdn.jsdelivr.net/npm/tailwindcss@2.2.19/dist/tailwind.min.css"
+      rel="stylesheet"
+    />
+    <link
+      rel="stylesheet"
+      href="https://unpkg.com/leaflet@1.7.1/dist/leaflet.css"
+    />
+    <link
+      rel="stylesheet"
+      href="https://unpkg.com/leaflet.markercluster@1.4.1/dist/MarkerCluster.css"
+    />
+    <link
+      rel="stylesheet"
+      href="https://unpkg.com/leaflet.markercluster@1.4.1/dist/MarkerCluster.Default.css"
+    />
+    <script src="https://unpkg.com/leaflet@1.7.1/dist/leaflet.js"></script>
+    <script src="https://unpkg.com/leaflet.markercluster@1.4.1/dist/leaflet.markercluster.js"></script>
+    <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+    <style>
+      /* Basic layout */
+      body {
+        margin: 0;
+        padding: 0;
+        min-height: 100vh;
+      }
+
+      .container {
+        height: 100vh;
+        padding: 1rem;
+        box-sizing: border-box;
+      }
+
+      /* Map and charts */
+      #map {
+        height: 350px;
+        width: 100%;
+      }
+
+      @media screen and (min-height: 900px) {
+        #map {
+          height: 450px;
+        }
+      }
+
+      @media screen and (max-height: 700px) {
+        #map {
+          height: 250px;
+        }
+      }
+
+      .chart-container {
+        position: relative;
+        width: 100%;
+      }
+
+      #stateChart {
+        height: 200px;
+      }
+
+      #divisionChart {
+        height: 400px;
+      }
+
+      @media screen and (max-height: 700px) {
+        #stateChart {
+          height: 180px;
+        }
+        #divisionChart {
+          height: 350px;
+        }
+      }
+
+      /* Marker clusters */
+      .marker-cluster {
+        background-clip: padding-box;
+        border-radius: 50%;
+        text-align: center;
+      }
+
+      .marker-cluster div {
+        text-align: center;
+        border-radius: 50%;
+        font-size: 12px;
+        color: white;
+        font-weight: bold;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        width: 100%;
+        height: 100%;
+      }
+
+      .marker-cluster:hover {
+        box-shadow: none !important;
+        border: none !important;
+      }
+
+      .leaflet-marker-icon:hover {
+        outline: none !important;
+      }
+
+      /* Search functionality */
+      .search-container {
+        position: relative;
+        margin-bottom: 0.5rem;
+      }
+
+      .search-results {
+        position: absolute;
+        top: 100%;
+        left: 0;
+        right: 0;
+        background: white;
+        border: 1px solid #ddd;
+        border-top: none;
+        max-height: 200px;
+        overflow-y: auto;
+        z-index: 1000;
+        border-radius: 0 0 4px 4px;
+        box-shadow: 0 2px 4px rgba(0, 0, 0, 0.1);
+      }
+
+      .search-result-item {
+        padding: 6px 12px;
+        cursor: pointer;
+        border-bottom: 1px solid #eee;
+      }
+
+      .search-result-item:hover {
+        background-color: #f5f5f5;
+      }
+
+      .station-details {
+        margin-top: 0.5rem;
+        padding: 0.75rem;
+        background-color: #f8f9fa;
+        border-radius: 4px;
+        border: 1px solid #dee2e6;
+        display: none;
+      }
+
+      /* Animation */
+      @keyframes spin {
+        from {
+          transform: rotate(0deg);
+        }
+        to {
+          transform: rotate(360deg);
+        }
+      }
+
+      .animate-spin {
+        animation: spin 0.5s linear;
+      }
+
+      /* Category checkboxes */
+      .category-container {
+        max-height: none; /* Remove max height */
+        overflow-y: visible; /* Remove scroll */
+        border: 1px solid #e2e8f0;
+        border-radius: 0.375rem;
+        padding: 0.5rem;
+        margin-top: 0.5rem;
+        display: grid;
+        grid-template-columns: repeat(2, 1fr); /* Two columns */
+        gap: 0.5rem; /* Gap between items */
+      }
+
+      .category-checkbox {
+        display: flex;
+        align-items: center;
+        margin-bottom: 0; /* Remove margin as we're using grid gap */
+      }
+
+      .category-checkbox input[type="checkbox"] {
+        margin-right: 0.5rem;
+      }
+
+      .category-checkbox label {
+        font-size: 0.75rem; /* Slightly smaller font */
+        color: #4a5568;
+        cursor: pointer;
+        white-space: nowrap; /* Prevent text wrapping */
+        overflow: hidden;
+        text-overflow: ellipsis; /* Add ellipsis for long text */
+      }
+    </style>
+  </head>
+  <body class="bg-gray-100">
+    <div class="container mx-auto p-2">
+      <h1 class="text-xl font-bold mb-2">Indian Railway Stations Dashboard</h1>
+
+      <div class="grid grid-cols-4 gap-2">
+        <!-- Filters -->
+        <div class="col-span-1 bg-white p-3 rounded shadow">
+          <div class="flex justify-between items-center mb-2">
+            <h2 class="text-lg font-semibold">Filters</h2>
+            <button
+              id="resetFilters"
+              class="text-blue-600 hover:text-blue-800"
+              title="Reset all filters"
+            >
+              <svg
+                xmlns="http://www.w3.org/2000/svg"
+                class="h-5 w-5"
+                viewBox="0 0 20 20"
+                fill="currentColor"
+              >
+                <path
+                  fill-rule="evenodd"
+                  d="M4 2a1 1 0 011 1v2.101a7.002 7.002 0 0111.601 2.566 1 1 0 11-1.885.666A5.002 5.002 0 005.999 7H9a1 1 0 010 2H4a1 1 0 01-1-1V3a1 1 0 011-1zm.008 9.057a1 1 0 011.276.61A5.002 5.002 0 0014.001 13H11a1 1 0 110-2h5a1 1 0 011 1v5a1 1 0 11-2 0v-2.101a7.002 7.002 0 01-11.601-2.566 1 1 0 01.61-1.276z"
+                  clip-rule="evenodd"
+                />
+              </svg>
+            </button>
+          </div>
+
+          <!-- Search Bar -->
+          <div class="search-container">
+            <label class="block text-sm font-medium mb-1">Search Station</label>
+            <input
+              type="text"
+              id="stationSearch"
+              class="w-full p-1.5 border rounded"
+              placeholder="Type station name..."
+              autocomplete="off"
+            />
+            <div id="searchResults" class="search-results hidden"></div>
+            <div id="stationDetails" class="station-details"></div>
+          </div>
+
+          <div class="mb-2">
+            <label class="block text-sm font-medium mb-1">State</label>
+            <select id="stateFilter" class="w-full p-1.5 border rounded">
+              <option value="">All States</option>
+            </select>
+          </div>
+
+          <div class="mb-2">
+            <label class="block text-sm font-medium mb-1">Division</label>
+            <select id="divisionFilter" class="w-full p-1.5 border rounded">
+              <option value="">All Divisions</option>
+            </select>
+          </div>
+
+          <!-- Category Filter -->
+          <div class="mb-2">
+            <label class="block text-sm font-medium mb-1">Category</label>
+            <div id="categoryFilters" class="category-container">
+              <!-- Checkboxes will be dynamically added here -->
+            </div>
+          </div>
+
+          <div class="mt-2">
+            <p class="text-sm">
+              Total Stations: <span id="totalStations">0</span>
+            </p>
+            <p class="text-sm">
+              Selected: <span id="selectedStations">0</span>
+            </p>
+          </div>
+        </div>
+
+        <!-- Main Content -->
+        <div class="col-span-3 space-y-2">
+          <!-- Map and Division Chart Row -->
+          <div class="grid grid-cols-4 gap-2">
+            <!-- Map -->
+            <div class="col-span-3 bg-white p-2 rounded shadow">
+              <div id="map"></div>
+            </div>
+            <!-- Division Chart -->
+            <div class="col-span-1 bg-white p-2 rounded shadow">
+              <h3 class="text-sm font-semibold mb-1">Stations by Division</h3>
+              <div class="chart-container">
+                <canvas id="divisionChart"></canvas>
+              </div>
+            </div>
+          </div>
+
+          <!-- State Chart (Full Width) -->
+          <div class="bg-white p-2 rounded shadow">
+            <h3 class="text-sm font-semibold mb-1">Stations by State</h3>
+            <div class="chart-container">
+              <canvas id="stateChart"></canvas>
+            </div>
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <script>
+      let stations = [];
+      let stateChart, divisionChart;
+      let markerClusterGroup;
+      let searchMarker;
+
+      const map = L.map("map").setView([23.5937, 82.9629], 5);
+      L.tileLayer("https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png").addTo(
+        map
+      );
+
+      const southWest = L.latLng(6.7, 68.1);
+      const northEast = L.latLng(37.1, 97.4);
+      const bounds = L.latLngBounds(southWest, northEast);
+      map.setMaxBounds(bounds);
+      map.on("drag", () => map.panInsideBounds(bounds, { animate: false }));
+
+      function formatStateName(stateName) {
+        return stateName
+          .toLowerCase()
+          .split(" ")
+          .map((word) => word.charAt(0).toUpperCase() + word.slice(1))
+          .join(" ");
+      }
+
+      function getColor(count) {
+        const colorStops = [
+          { count: 5, color: [173, 216, 230] },
+          { count: 10, color: [135, 206, 235] },
+          { count: 20, color: [65, 105, 225] },
+          { count: 50, color: [0, 0, 205] },
+          { count: 100, color: [0, 0, 139] },
+        ];
+
+        for (let i = 0; i < colorStops.length; i++) {
+          if (count <= colorStops[i].count) {
+            return colorStops[i].color;
+          }
+        }
+        return colorStops[colorStops.length - 1].color;
+      }
+
+      function getMarkerSize(count) {
+        const baseSize = 30;
+        if (count <= 5) return baseSize;
+        if (count <= 10) return baseSize * 1.2;
+        if (count <= 20) return baseSize * 1.4;
+        if (count <= 50) return baseSize * 1.6;
+        if (count <= 100) return baseSize * 1.8;
+        return baseSize * 2;
+      }
+
+      markerClusterGroup = L.markerClusterGroup({
+        showCoverageOnHover: false,
+        zoomToBoundsOnClick: true,
+        maxClusterRadius: 40,
+        spiderfyOnMaxZoom: true,
+        removeOutsideVisibleBounds: true,
+        animate: false,
+        iconCreateFunction: function (cluster) {
+          const childCount = cluster.getChildCount();
+          const [r, g, b] = getColor(childCount);
+          const size = getMarkerSize(childCount);
+          const fontSize = Math.max(12, Math.min(16, size * 0.4));
+
+          return new L.DivIcon({
+            html: `
+              <div style="
+                background-color: rgba(${r}, ${g}, ${b}, 0.8);
+                width: ${size}px;
+                height: ${size}px;
+                font-size: ${fontSize}px;
+              ">
+                <span>${childCount}</span>
+              </div>
+            `,
+            className: "marker-cluster",
+            iconSize: L.point(size, size),
+          });
+        },
+      });
+      map.addLayer(markerClusterGroup);
+
+      function updateCharts(filteredStations) {
+        // Calculate data for all states first
+        const allStatesData = {};
+        stations.forEach((station) => {
+          const formattedState = formatStateName(station.State);
+          allStatesData[formattedState] =
+            (allStatesData[formattedState] || 0) + 1;
+        });
+
+        // Get division data for ALL divisions
+        const allDivisionsData = {};
+        stations.forEach((station) => {
+          allDivisionsData[station.Division] =
+            (allDivisionsData[station.Division] || 0) + 1;
+        });
+
+        const selectedState = document.getElementById("stateFilter").value;
+        const formattedSelectedState = selectedState
+          ? formatStateName(selectedState)
+          : "";
+
+        // Get the divisions that belong to the selected state
+        const divisionsInSelectedState = new Set();
+        if (selectedState) {
+          stations.forEach((station) => {
+            if (formatStateName(station.State) === selectedState) {
+              divisionsInSelectedState.add(station.Division);
+            }
+          });
+        }
+
+        // Create colors array for states
+        const stateBackgroundColors = Object.keys(allStatesData).map(
+          (state) =>
+            state === formattedSelectedState
+              ? "#000075" // Navy Blue for selected state
+              : "#CCC7D2" // Chinese Silver for other states
+        );
+
+        const stateBorderColors = Object.keys(allStatesData).map(
+          (state) =>
+            state === formattedSelectedState
+              ? "#000075" // Navy Blue border for selected
+              : "#CCC7D2" // Chinese Silver border for others
+        );
+
+        const stateBorderWidth = Object.keys(allStatesData).map((state) =>
+          state === formattedSelectedState ? 2 : 1
+        );
+
+        // Create colors array for divisions
+        const divisionBackgroundColors = Object.keys(allDivisionsData).map(
+          (division) =>
+            divisionsInSelectedState.has(division)
+              ? "#000075" // Navy Blue for divisions in selected state
+              : "#CCC7D2" // Chinese Silver for other divisions
+        );
+
+        const divisionBorderColors = Object.keys(allDivisionsData).map(
+          (division) =>
+            divisionsInSelectedState.has(division)
+              ? "#000075" // Navy Blue border for selected
+              : "#CCC7D2" // Chinese Silver border for others
+        );
+
+        const divisionBorderWidth = Object.keys(allDivisionsData).map(
+          (division) => (divisionsInSelectedState.has(division) ? 2 : 1)
+        );
+
+        // State Chart
+        if (stateChart) stateChart.destroy();
+        const stateCtx = document.getElementById("stateChart").getContext("2d");
+        stateChart = new Chart(stateCtx, {
+          type: "bar",
+          data: {
+            labels: Object.keys(allStatesData),
+            datasets: [
+              {
+                data: Object.values(allStatesData),
+                backgroundColor: stateBackgroundColors,
+                borderColor: stateBorderColors,
+                borderWidth: stateBorderWidth,
+              },
+            ],
+          },
+          options: {
+            responsive: true,
+            maintainAspectRatio: false,
+            plugins: {
+              legend: { display: false },
+            },
+            scales: {
+              x: {
+                ticks: {
+                  font: { size: 10 },
+                  maxRotation: 45,
+                  minRotation: 45,
+                },
+              },
+              y: {
+                beginAtZero: true,
+                title: {
+                  display: true,
+                  text: "Number of Stations",
+                },
+              },
+            },
+          },
+        });
+
+        // Division chart with updated colors
+        if (divisionChart) divisionChart.destroy();
+        const divisionCtx = document
+          .getElementById("divisionChart")
+          .getContext("2d");
+        divisionChart = new Chart(divisionCtx, {
+          type: "bar",
+          data: {
+            labels: Object.keys(allDivisionsData),
+            datasets: [
+              {
+                data: Object.values(allDivisionsData),
+                backgroundColor: divisionBackgroundColors,
+                borderColor: divisionBorderColors,
+                borderWidth: divisionBorderWidth,
+              },
+            ],
+          },
+          options: {
+            responsive: true,
+            maintainAspectRatio: false,
+            indexAxis: "y",
+            plugins: {
+              legend: { display: false },
+            },
+            scales: {
+              x: {
+                beginAtZero: true,
+                title: {
+                  display: true,
+                  text: "Number of Stations",
+                },
+              },
+            },
+          },
+        });
+      }
+
+      function initializeFilters() {
+        const states = [
+          ...new Set(stations.map((s) => formatStateName(s.State))),
+        ].sort();
+        const divisions = [...new Set(stations.map((s) => s.Division))].sort();
+        const categories = [
+          ...new Set(stations.map((s) => s.Old_Station_Category || "N/A")),
+        ].sort();
+
+        // Initialize state and division filters
+        ["state", "division"].forEach((filterType) => {
+          const filter = document.getElementById(`${filterType}Filter`);
+          const values = filterType === "state" ? states : divisions;
+
+          values.forEach((value) => {
+            if (value) {
+              const option = document.createElement("option");
+              option.value = value;
+              option.textContent = value;
+              filter.appendChild(option);
+            }
+          });
+        });
+
+        // Initialize category checkboxes
+        const categoryContainer = document.getElementById("categoryFilters");
+        categories.forEach((category) => {
+          const checkboxDiv = document.createElement("div");
+          checkboxDiv.className = "category-checkbox";
+
+          const checkbox = document.createElement("input");
+          checkbox.type = "checkbox";
+          checkbox.id = `category-${category}`;
+          checkbox.value = category;
+          checkbox.className = "category-filter";
+          checkbox.checked = true; // Make checked by default
+
+          const label = document.createElement("label");
+          label.htmlFor = `category-${category}`;
+          label.textContent = category;
+          label.title = category; // Add tooltip for long category names
+
+          checkboxDiv.appendChild(checkbox);
+          checkboxDiv.appendChild(label);
+          categoryContainer.appendChild(checkboxDiv);
+        });
+
+        // Add event listeners
+        document
+          .getElementById("stateFilter")
+          .addEventListener("change", updateDashboard);
+        document
+          .getElementById("divisionFilter")
+          .addEventListener("change", updateDashboard);
+        document.querySelectorAll(".category-filter").forEach((checkbox) => {
+          checkbox.addEventListener("change", updateDashboard);
+        });
+      }
+
+      function updateDashboard() {
+        const selectedState = document.getElementById("stateFilter").value;
+        const selectedDivision =
+          document.getElementById("divisionFilter").value;
+        const selectedCategories = Array.from(
+          document.querySelectorAll(".category-filter:checked")
+        ).map((cb) => cb.value);
+
+        const filteredStations = stations.filter((station) => {
+          const formattedStationState = formatStateName(station.State);
+          const stationCategory = station.Old_Station_Category || "N/A";
+
+          return (
+            (!selectedState || formattedStationState === selectedState) &&
+            (!selectedDivision || station.Division === selectedDivision) &&
+            (selectedCategories.length === 0 ||
+              selectedCategories.includes(stationCategory))
+          );
+        });
+
+        document.getElementById("totalStations").textContent = stations.length;
+        document.getElementById("selectedStations").textContent =
+          filteredStations.length;
+
+        updateMap(filteredStations);
+        updateCharts(filteredStations);
+      }
+
+      function updateMap(filteredStations) {
+        markerClusterGroup.clearLayers();
+
+        filteredStations.forEach((station) => {
+          if (station.Latitude && station.Longitude) {
+            const marker = L.circleMarker(
+              [station.Latitude, station.Longitude],
+              {
+                radius: 3,
+                fillColor: "#3388ff",
+                color: "#3388ff",
+                weight: 1,
+                opacity: 1,
+                fillOpacity: 0.8,
+              }
+            ).bindPopup(`
+              <b>${station.Station_Name}</b><br>
+              Code: ${station.Station_Code}<br>
+              Division: ${station.Division}<br>
+              State: ${formatStateName(station.State)}
+            `);
+            markerClusterGroup.addLayer(marker);
+          }
+        });
+      }
+
+      const searchInput = document.getElementById("stationSearch");
+      const searchResults = document.getElementById("searchResults");
+      const stationDetails = document.getElementById("stationDetails");
+
+      function debounce(func, wait) {
+        let timeout;
+        return function executedFunction(...args) {
+          const later = () => {
+            clearTimeout(timeout);
+            func(...args);
+          };
+          clearTimeout(timeout);
+          timeout = setTimeout(later, wait);
+        };
+      }
+
+      const handleSearch = debounce((searchTerm) => {
+        if (searchTerm.length < 2) {
+          searchResults.classList.add("hidden");
+          return;
+        }
+
+        const matches = stations
+          .filter(
+            (station) =>
+              station.Station_Name.toLowerCase().includes(
+                searchTerm.toLowerCase()
+              ) ||
+              station.Station_Code.toLowerCase().includes(
+                searchTerm.toLowerCase()
+              )
+          )
+          .slice(0, 10);
+
+        if (matches.length > 0) {
+          searchResults.innerHTML = matches
+            .map(
+              (station) => `
+              <div class="search-result-item" data-station-id="${station.Station_Code}">
+                ${station.Station_Name} (${station.Station_Code})
+              </div>
+            `
+            )
+            .join("");
+          searchResults.classList.remove("hidden");
+        } else {
+          searchResults.innerHTML =
+            '<div class="search-result-item">No matches found</div>';
+          searchResults.classList.remove("hidden");
+        }
+      }, 300);
+
+      searchInput.addEventListener("input", (e) =>
+        handleSearch(e.target.value)
+      );
+
+      searchResults.addEventListener("click", (e) => {
+        const item = e.target.closest(".search-result-item");
+        if (!item) return;
+
+        const stationCode = item.dataset.stationId;
+        const station = stations.find((s) => s.Station_Code === stationCode);
+        if (station) {
+          searchInput.value = station.Station_Name;
+          searchResults.classList.add("hidden");
+          showStationDetails(station);
+        }
+      });
+
+      document.addEventListener("click", (e) => {
+        if (
+          !searchInput.contains(e.target) &&
+          !searchResults.contains(e.target)
+        ) {
+          searchResults.classList.add("hidden");
+        }
+      });
+
+      function showStationDetails(station) {
+        stationDetails.style.display = "block";
+        stationDetails.innerHTML = `
+          <h4 class="font-semibold text-lg mb-2">${station.Station_Name}</h4>
+          <p><strong>Station Code:</strong> ${station.Station_Code}</p>
+          <p><strong>State:</strong> ${formatStateName(station.State)}</p>
+          <p><strong>Division:</strong> ${station.Division}</p>
+          <p><strong>Category:</strong> ${
+            station.Old_Station_Category || "N/A"
+          }</p>
+        `;
+
+        if (searchMarker) {
+          markerClusterGroup.removeLayer(searchMarker);
+        }
+
+        if (station.Latitude && station.Longitude) {
+          searchMarker = L.circleMarker([station.Latitude, station.Longitude], {
+            radius: 8,
+            fillColor: "#ff4444",
+            color: "#ff4444",
+            weight: 2,
+            opacity: 1,
+            fillOpacity: 0.8,
+          }).bindPopup(`
+            <b>${station.Station_Name}</b><br>
+            Code: ${station.Station_Code}<br>
+            Division: ${station.Division}<br>
+            State: ${formatStateName(station.State)}
+          `);
+          markerClusterGroup.addLayer(searchMarker);
+          map.setView([station.Latitude, station.Longitude], 10);
+          searchMarker.openPopup();
+        }
+      }
+
+      // Reset functionality
+      document
+        .getElementById("resetFilters")
+        .addEventListener("click", function () {
+          document.getElementById("stateFilter").value = "";
+          document.getElementById("divisionFilter").value = "";
+          document.getElementById("stationSearch").value = "";
+          document.querySelectorAll(".category-filter").forEach((checkbox) => {
+            checkbox.checked = true; // Reset to checked state
+          });
+          stationDetails.style.display = "none";
+
+          if (searchMarker) {
+            markerClusterGroup.removeLayer(searchMarker);
+            searchMarker = null;
+          }
+
+          map.setView([23.5937, 82.9629], 5);
+          updateDashboard();
+
+          this.classList.add("animate-spin");
+          setTimeout(() => this.classList.remove("animate-spin"), 500);
+        });
+
+      // Load initial data
+      fetch("all_railway_stations.json")
+        .then((response) => response.json())
+        .then((data) => {
+          console.log("Data loaded:", data.length, "stations");
+          stations = data;
+          initializeFilters();
+          updateDashboard();
+        })
+        .catch((error) => {
+          console.error("Error loading data:", error);
+        });
+    </script>
+  </body>
+</html>
