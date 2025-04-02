@@ -25,50 +25,30 @@
     <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
     <style>
       :root {
-        --base-font-size: min(1.2vw, 16px);
+        /* Base size that scales with viewport width */
+        font-size: calc(14px + 0.4vw);
       }
 
       body {
         margin: 0;
         padding: 0;
         min-height: 100vh;
-        background-color: #f3f4f6;
-        font-size: var(--base-font-size);
+        font-size: 1rem;
       }
 
       .container {
-        min-height: 100vh;
-        width: 100%;
-        max-width: 1920px;
-        margin: 0 auto;
-        padding: 2rem;
+        height: 100vh;
+        padding: 1rem;
         box-sizing: border-box;
+        max-width: 2000px;
+        margin: 0 auto;
       }
 
-      h1 {
-        font-size: calc(var(--base-font-size) * 2) !important;
-      }
-
-      h2 {
-        font-size: calc(var(--base-font-size) * 1.5) !important;
-      }
-
-      h3 {
-        font-size: calc(var(--base-font-size) * 1.2) !important;
-      }
-
-      label,
-      select,
-      input,
-      p {
-        font-size: calc(var(--base-font-size) * 1.1) !important;
-      }
-
+      /* Map and charts */
       #map {
-        height: 70vh;
+        height: calc(45vh - 2rem);
+        min-height: 300px;
         width: 100%;
-        min-height: 600px;
-        border-radius: 0.5rem;
       }
 
       .chart-container {
@@ -77,14 +57,16 @@
       }
 
       #stateChart {
-        height: 300px;
+        height: calc(25vh - 2rem);
+        min-height: 200px;
       }
 
       #divisionChart {
-        height: 70vh;
-        min-height: 600px;
+        height: calc(45vh - 2rem);
+        min-height: 300px;
       }
 
+      /* Marker clusters */
       .marker-cluster {
         background-clip: padding-box;
         border-radius: 50%;
@@ -94,7 +76,7 @@
       .marker-cluster div {
         text-align: center;
         border-radius: 50%;
-        font-size: 12px;
+        font-size: calc(0.75rem + 0.1vw);
         color: white;
         font-weight: bold;
         display: flex;
@@ -104,6 +86,7 @@
         height: 100%;
       }
 
+      /* Search functionality */
       .search-container {
         position: relative;
         margin-bottom: 0.5rem;
@@ -122,10 +105,11 @@
         z-index: 1000;
         border-radius: 0 0 4px 4px;
         box-shadow: 0 2px 4px rgba(0, 0, 0, 0.1);
+        font-size: 0.9rem;
       }
 
       .search-result-item {
-        padding: 8px 12px;
+        padding: 0.5rem 1rem;
         cursor: pointer;
         border-bottom: 1px solid #eee;
       }
@@ -136,13 +120,64 @@
 
       .station-details {
         margin-top: 0.5rem;
-        padding: 1rem;
+        padding: 0.75rem;
         background-color: #f8f9fa;
-        border-radius: 0.5rem;
+        border-radius: 4px;
         border: 1px solid #dee2e6;
         display: none;
+        font-size: 0.9rem;
       }
 
+      /* Category checkboxes */
+      .category-container {
+        border: 1px solid #e2e8f0;
+        border-radius: 0.375rem;
+        padding: 0.5rem;
+        margin-top: 0.5rem;
+        display: grid;
+        grid-template-columns: repeat(2, 1fr);
+        gap: 0.5rem;
+      }
+
+      .category-checkbox {
+        display: flex;
+        align-items: center;
+      }
+
+      .category-checkbox input[type="checkbox"] {
+        margin-right: 0.5rem;
+        width: calc(1rem + 0.2vw);
+        height: calc(1rem + 0.2vw);
+      }
+
+      .category-checkbox label {
+        font-size: 0.85rem;
+        color: #4a5568;
+        cursor: pointer;
+        white-space: nowrap;
+        overflow: hidden;
+        text-overflow: ellipsis;
+      }
+
+      /* Responsive text sizes */
+      h1 {
+        font-size: calc(1.2rem + 0.5vw);
+      }
+      h2 {
+        font-size: calc(1.1rem + 0.3vw);
+      }
+      h3 {
+        font-size: calc(1rem + 0.2vw);
+      }
+
+      /* Form elements */
+      select,
+      input {
+        font-size: 0.9rem;
+        padding: 0.5rem;
+      }
+
+      /* Animation */
       @keyframes spin {
         from {
           transform: rotate(0deg);
@@ -155,66 +190,20 @@
       .animate-spin {
         animation: spin 0.5s linear;
       }
-
-      .category-container {
-        max-height: none;
-        overflow-y: visible;
-        border: 1px solid #e2e8f0;
-        border-radius: 0.375rem;
-        padding: 0.75rem;
-        margin-top: 0.5rem;
-        display: grid;
-        grid-template-columns: repeat(2, 1fr);
-        gap: 0.75rem;
-      }
-
-      .category-checkbox {
-        display: flex;
-        align-items: center;
-      }
-
-      .category-checkbox input[type="checkbox"] {
-        margin-right: 0.5rem;
-      }
-
-      .category-checkbox label {
-        font-size: 0.875rem;
-        color: #4a5568;
-        cursor: pointer;
-        white-space: nowrap;
-        overflow: hidden;
-        text-overflow: ellipsis;
-      }
-
-      @media (max-width: 1024px) {
-        .container {
-          padding: 1rem;
-        }
-
-        #map {
-          height: 50vh;
-        }
-
-        #divisionChart {
-          height: 50vh;
-        }
-      }
     </style>
   </head>
-  <body>
-    <div class="container mx-auto">
-      <h1 class="text-2xl font-bold mb-4 text-gray-800">
-        Indian Railway Stations Dashboard
-      </h1>
+  <body class="bg-gray-100">
+    <div class="container mx-auto p-2">
+      <h1 class="text-xl font-bold mb-2">Indian Railway Stations Dashboard</h1>
 
-      <div class="grid grid-cols-12 gap-4">
+      <div class="grid grid-cols-4 gap-2">
         <!-- Filters -->
-        <div class="col-span-3 bg-white p-4 rounded-lg shadow-md">
-          <div class="flex justify-between items-center mb-4">
-            <h2 class="text-lg font-semibold text-gray-800">Filters</h2>
+        <div class="col-span-1 bg-white p-3 rounded shadow">
+          <div class="flex justify-between items-center mb-2">
+            <h2 class="text-lg font-semibold">Filters</h2>
             <button
               id="resetFilters"
-              class="text-blue-600 hover:text-blue-800 transition-colors duration-200"
+              class="text-blue-600 hover:text-blue-800"
               title="Reset all filters"
             >
               <svg
@@ -233,14 +222,12 @@
           </div>
 
           <!-- Search Bar -->
-          <div class="search-container mb-4">
-            <label class="block text-sm font-medium text-gray-700 mb-1"
-              >Search Station</label
-            >
+          <div class="search-container">
+            <label class="block text-sm font-medium mb-1">Search Station</label>
             <input
               type="text"
               id="stationSearch"
-              class="w-full p-2 border rounded-md focus:ring-2 focus:ring-blue-500 focus:border-blue-500"
+              class="w-full p-1.5 border rounded"
               placeholder="Type station name..."
               autocomplete="off"
             />
@@ -248,74 +235,58 @@
             <div id="stationDetails" class="station-details"></div>
           </div>
 
-          <div class="mb-4">
-            <label class="block text-sm font-medium text-gray-700 mb-1"
-              >State</label
-            >
-            <select
-              id="stateFilter"
-              class="w-full p-2 border rounded-md focus:ring-2 focus:ring-blue-500 focus:border-blue-500"
-            >
+          <div class="mb-2">
+            <label class="block text-sm font-medium mb-1">State</label>
+            <select id="stateFilter" class="w-full p-1.5 border rounded">
               <option value="">All States</option>
             </select>
           </div>
 
-          <div class="mb-4">
-            <label class="block text-sm font-medium text-gray-700 mb-1"
-              >Division</label
-            >
-            <select
-              id="divisionFilter"
-              class="w-full p-2 border rounded-md focus:ring-2 focus:ring-blue-500 focus:border-blue-500"
-            >
+          <div class="mb-2">
+            <label class="block text-sm font-medium mb-1">Division</label>
+            <select id="divisionFilter" class="w-full p-1.5 border rounded">
               <option value="">All Divisions</option>
             </select>
           </div>
 
           <!-- Category Filter -->
-          <div class="mb-4">
-            <label class="block text-sm font-medium text-gray-700 mb-1"
-              >Category</label
-            >
-            <div id="categoryFilters" class="category-container"></div>
+          <div class="mb-2">
+            <label class="block text-sm font-medium mb-1">Category</label>
+            <div id="categoryFilters" class="category-container">
+              <!-- Checkboxes will be dynamically added here -->
+            </div>
           </div>
 
-          <div class="mt-4 p-3 bg-gray-50 rounded-md">
-            <p class="text-sm text-gray-600 mb-1">
-              Total Stations:
-              <span id="totalStations" class="font-semibold">0</span>
+          <div class="mt-2">
+            <p class="text-sm">
+              Total Stations: <span id="totalStations">0</span>
             </p>
-            <p class="text-sm text-gray-600">
-              Selected:
-              <span id="selectedStations" class="font-semibold">0</span>
+            <p class="text-sm">
+              Selected: <span id="selectedStations">0</span>
             </p>
           </div>
         </div>
 
         <!-- Main Content -->
-        <div class="col-span-9 space-y-4">
+        <div class="col-span-3 space-y-2">
           <!-- Map and Division Chart Row -->
-          <div class="grid grid-cols-4 gap-4">
+          <div class="grid grid-cols-4 gap-2">
             <!-- Map -->
-            <div class="col-span-3 bg-white p-4 rounded-lg shadow-md">
+            <div class="col-span-3 bg-white p-2 rounded shadow">
               <div id="map"></div>
             </div>
             <!-- Division Chart -->
-            <div class="col-span-1 bg-white p-4 rounded-lg shadow-md">
-              <h3 class="text-sm font-semibold mb-2 text-gray-800">
-                Stations by Division
-              </h3>
+            <div class="col-span-1 bg-white p-2 rounded shadow">
+              <h3 class="text-sm font-semibold mb-1">Stations by Division</h3>
               <div class="chart-container">
                 <canvas id="divisionChart"></canvas>
               </div>
             </div>
           </div>
 
-          <!-- State Chart -->
-          <div class="bg-white p-4 rounded-lg shadow-md">
-            <h3 class="text-sm font-semibold mb-2 text-gray-800">
-              Stations by State
-            </h3>
+          <!-- State Chart (Full Width) -->
+          <div class="bg-white p-2 rounded shadow">
+            <h3 class="text-sm font-semibold mb-1">Stations by State</h3>
             <div class="chart-container">
               <canvas id="stateChart"></canvas>
             </div>
@@ -330,7 +301,6 @@
       let markerClusterGroup;
       let searchMarker;
 
-      // Initialize map
       const map = L.map("map").setView([23.5937, 82.9629], 5);
       L.tileLayer("https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png").addTo(
         map
@@ -342,37 +312,13 @@
       map.setMaxBounds(bounds);
       map.on("drag", () => map.panInsideBounds(bounds, { animate: false }));
 
-      // Initialize marker cluster group
-      markerClusterGroup = L.markerClusterGroup({
-        showCoverageOnHover: false,
-        zoomToBoundsOnClick: true,
-        maxClusterRadius: 40,
-        spiderfyOnMaxZoom: true,
-        removeOutsideVisibleBounds: true,
-        animate: false,
-        iconCreateFunction: function (cluster) {
-          const childCount = cluster.getChildCount();
-          const [r, g, b] = getColor(childCount);
-          const size = getMarkerSize(childCount);
-          const fontSize = Math.max(12, Math.min(16, size * 0.4));
-
-          return new L.DivIcon({
-            html: `
-              <div style="
-                background-color: rgba(${r}, ${g}, ${b}, 0.8);
-                width: ${size}px;
-                height: ${size}px;
-                font-size: ${fontSize}px;
-              ">
-                <span>${childCount}</span>
-              </div>
-            `,
-            className: "marker-cluster",
-            iconSize: L.point(size, size),
-          });
-        },
-      });
-      map.addLayer(markerClusterGroup);
+      function formatStateName(stateName) {
+        return stateName
+          .toLowerCase()
+          .split(" ")
+          .map((word) => word.charAt(0).toUpperCase() + word.slice(1))
+          .join(" ");
+      }
 
       function getColor(count) {
         const colorStops = [
@@ -401,101 +347,36 @@
         return baseSize * 2;
       }
 
-      function formatStateName(stateName) {
-        return stateName
-          .toLowerCase()
-          .split(" ")
-          .map((word) => word.charAt(0).toUpperCase() + word.slice(1))
-          .join(" ");
-      }
+      markerClusterGroup = L.markerClusterGroup({
+        showCoverageOnHover: false,
+        zoomToBoundsOnClick: true,
+        maxClusterRadius: 40,
+        spiderfyOnMaxZoom: true,
+        removeOutsideVisibleBounds: true,
+        animate: false,
+        iconCreateFunction: function (cluster) {
+          const childCount = cluster.getChildCount();
+          const [r, g, b] = getColor(childCount);
+          const size = getMarkerSize(childCount);
+          const fontSize = Math.max(12, Math.min(16, size * 0.4));
 
-      function initializeFilters() {
-        const states = [
-          ...new Set(stations.map((s) => formatStateName(s.State))),
-        ].sort();
-        const divisions = [...new Set(stations.map((s) => s.Division))].sort();
-        const categories = [
-          ...new Set(stations.map((s) => s.Old_Station_Category || "N/A")),
-        ].sort();
-
-        // Initialize state filter
-        const stateFilter = document.getElementById("stateFilter");
-        states.forEach((state) => {
-          const option = document.createElement("option");
-          option.value = state;
-          option.textContent = state;
-          stateFilter.appendChild(option);
-        });
-
-        // Initialize division filter
-        const divisionFilter = document.getElementById("divisionFilter");
-        divisions.forEach((division) => {
-          const option = document.createElement("option");
-          option.value = division;
-          option.textContent = division;
-          divisionFilter.appendChild(option);
-        });
-
-        // Initialize category checkboxes
-        const categoryContainer = document.getElementById("categoryFilters");
-        categories.forEach((category) => {
-          const checkboxDiv = document.createElement("div");
-          checkboxDiv.className = "category-checkbox";
-
-          const checkbox = document.createElement("input");
-          checkbox.type = "checkbox";
-          checkbox.id = `category-${category}`;
-          checkbox.value = category;
-          checkbox.className = "category-filter";
-          checkbox.checked = true;
-
-          const label = document.createElement("label");
-          label.htmlFor = `category-${category}`;
-          label.textContent = category;
-          label.title = category;
-
-          checkboxDiv.appendChild(checkbox);
-          checkboxDiv.appendChild(label);
-          categoryContainer.appendChild(checkboxDiv);
-        });
-
-        // Add event listeners
-        document
-          .getElementById("stateFilter")
-          .addEventListener("change", updateDashboard);
-        document
-          .getElementById("divisionFilter")
-          .addEventListener("change", updateDashboard);
-        document.querySelectorAll(".category-filter").forEach((checkbox) => {
-          checkbox.addEventListener("change", updateDashboard);
-        });
-      }
-
-      function updateMap(filteredStations) {
-        markerClusterGroup.clearLayers();
-
-        filteredStations.forEach((station) => {
-          if (station.Latitude && station.Longitude) {
-            const marker = L.circleMarker(
-              [station.Latitude, station.Longitude],
-              {
-                radius: 5,
-                fillColor: "#3388ff",
-                color: "#3388ff",
-                weight: 1,
-                opacity: 1,
-                fillOpacity: 0.8,
-              }
-            ).bindPopup(`
-              <b>${station.Station_Name}</b><br>
-              Code: ${station.Station_Code}<br>
-              Division: ${station.Division}<br>
-              State: ${formatStateName(station.State)}
-            `);
-            markerClusterGroup.addLayer(marker);
-          }
-        });
-      }
+          return new L.DivIcon({
+            html: `
+            <div style="
+              background-color: rgba(${r}, ${g}, ${b}, 0.8);
+              width: ${size}px;
+              height: ${size}px;
+              font-size: ${fontSize}px;
+            ">
+              <span>${childCount}</span>
+            </div>
+          `,
+            className: "marker-cluster",
+            iconSize: L.point(size, size),
+          });
+        },
+      });
+      map.addLayer(markerClusterGroup);
 
       function updateCharts(filteredStations) {
         // Calculate data for all states first
@@ -556,6 +437,14 @@
           (division) => (divisionsInSelectedState.has(division) ? 2 : 1)
         );
 
+        // Calculate responsive font sizes based on viewport width
+        const baseFontSize = Math.max(
+          12,
+          Math.min(16, window.innerWidth * 0.01)
+        );
+        const titleFontSize = baseFontSize * 1.2;
+        const labelFontSize = baseFontSize;
+
         // State Chart
         if (stateChart) stateChart.destroy();
         const stateCtx = document.getElementById("stateChart").getContext("2d");
@@ -577,46 +466,36 @@
             maintainAspectRatio: false,
             plugins: {
               legend: { display: false },
-              tooltip: {
-                bodyFont: {
-                  size: 14,
-                },
-                titleFont: {
-                  size: 16,
-                },
+              title: {
+                display: true,
+                text: "Stations by State",
+                font: { size: titleFontSize },
               },
             },
             scales: {
               x: {
-                grid: {
-                  display: false,
-                },
                 ticks: {
-                  font: {
-                    size: Math.max(10, Math.min(window.innerWidth / 100, 14)),
-                  },
+                  font: { size: labelFontSize },
                   maxRotation: 45,
                   minRotation: 45,
+                },
+                grid: {
+                  display: false,
                 },
               },
               y: {
                 beginAtZero: true,
                 grid: {
-                  borderDash: [5, 5],
-                  lineWidth: 1,
                   color: "#e2e8f0",
+                  borderDash: [5, 5],
                 },
                 ticks: {
-                  font: {
-                    size: Math.max(12, Math.min(window.innerWidth / 100, 16)),
-                  },
+                  font: { size: labelFontSize },
                 },
                 title: {
                   display: true,
                   text: "Number of Stations",
-                  font: {
-                    size: Math.max(14, Math.min(window.innerWidth / 80, 18)),
-                  },
+                  font: { size: labelFontSize },
                 },
               },
             },
@@ -642,39 +521,31 @@
             ],
           },
           options: {
-            indexAxis: "y",
             responsive: true,
             maintainAspectRatio: false,
+            indexAxis: "y",
             plugins: {
               legend: { display: false },
-              tooltip: {
-                bodyFont: {
-                  size: 14,
-                },
-                titleFont: {
-                  size: 16,
-                },
+              title: {
+                display: true,
+                text: "Stations by Division",
+                font: { size: titleFontSize },
               },
             },
             scales: {
               x: {
                 beginAtZero: true,
                 grid: {
-                  borderDash: [5, 5],
-                  lineWidth: 1,
                   color: "#e2e8f0",
+                  borderDash: [5, 5],
                 },
                 ticks: {
-                  font: {
-                    size: Math.max(12, Math.min(window.innerWidth / 100, 16)),
-                  },
+                  font: { size: labelFontSize },
                 },
                 title: {
                   display: true,
                   text: "Number of Stations",
-                  font: {
-                    size: Math.max(14, Math.min(window.innerWidth / 80, 18)),
-                  },
+                  font: { size: labelFontSize },
                 },
               },
               y: {
@@ -682,14 +553,79 @@
                   display: false,
                 },
                 ticks: {
-                  font: {
-                    size: Math.max(12, Math.min(window.innerWidth / 100, 16)),
-                  },
+                  font: { size: labelFontSize },
                 },
               },
             },
           },
         });
+      }
+
+      function initializeFilters() {
+        const states = [
+          ...new Set(stations.map((s) => formatStateName(s.State))),
+        ].sort();
+        const divisions = [...new Set(stations.map((s) => s.Division))].sort();
+        const categories = [
+          ...new Set(stations.map((s) => s.Old_Station_Category || "N/A")),
+        ].sort();
+
+        // Initialize state and division filters
+        ["state", "division"].forEach((filterType) => {
+          const filter = document.getElementById(`${filterType}Filter`);
+          const values = filterType === "state" ? states : divisions;
+
+          values.forEach((value) => {
+            if (value) {
+              const option = document.createElement("option");
+              option.value = value;
+              option.textContent = value;
+              filter.appendChild(option);
+            }
+          });
+        });
+
+        // Initialize category checkboxes
+        const categoryContainer = document.getElementById("categoryFilters");
+        categories.forEach((category) => {
+          const checkboxDiv = document.createElement("div");
+          checkboxDiv.className = "category-checkbox";
+
+          const checkbox = document.createElement("input");
+          checkbox.type = "checkbox";
+          checkbox.id = `category-${category}`;
+          checkbox.value = category;
+          checkbox.className = "category-filter";
+          checkbox.checked = true;
+
+          const label = document.createElement("label");
+          label.htmlFor = `category-${category}`;
+          label.textContent = category;
+          label.title = category;
+
+          checkboxDiv.appendChild(checkbox);
+          checkboxDiv.appendChild(label);
+          categoryContainer.appendChild(checkboxDiv);
+        });
+
+        // Add event listeners
+        document
+          .getElementById("stateFilter")
+          .addEventListener("change", updateDashboard);
+        document
+          .getElementById("divisionFilter")
+          .addEventListener("change", updateDashboard);
+        document.querySelectorAll(".category-filter").forEach((checkbox) => {
+          checkbox.addEventListener("change", updateDashboard);
+        });
+
+        // Add window resize listener for responsive updates
+        window.addEventListener(
+          "resize",
+          debounce(() => {
+            updateDashboard();
+          }, 250)
+        );
       }
 
       function updateDashboard() {
@@ -701,14 +637,15 @@
         ).map((cb) => cb.value);
 
         const filteredStations = stations.filter((station) => {
-          const stateMatch =
-            !selectedState || formatStateName(station.State) === selectedState;
-          const divisionMatch =
-            !selectedDivision || station.Division === selectedDivision;
-          const categoryMatch = selectedCategories.includes(
-            station.Old_Station_Category || "N/A"
+          const formattedStationState = formatStateName(station.State);
+          const stationCategory = station.Old_Station_Category || "N/A";
+
+          return (
+            (!selectedState || formattedStationState === selectedState) &&
+            (!selectedDivision || station.Division === selectedDivision) &&
+            (selectedCategories.length === 0 ||
+              selectedCategories.includes(stationCategory))
           );
-          return stateMatch && divisionMatch && categoryMatch;
         });
 
         document.getElementById("totalStations").textContent = stations.length;
@@ -719,7 +656,32 @@
         updateCharts(filteredStations);
       }
 
-      // Search functionality
+      function updateMap(filteredStations) {
+        markerClusterGroup.clearLayers();
+
+        filteredStations.forEach((station) => {
+          if (station.Latitude && station.Longitude) {
+            const marker = L.circleMarker(
+              [station.Latitude, station.Longitude],
+              {
+                radius: 3,
+                fillColor: "#3388ff",
+                color: "#3388ff",
+                weight: 1,
+                opacity: 1,
+                fillOpacity: 0.8,
+              }
+            ).bindPopup(`
+            <b>${station.Station_Name}</b><br>
+            Code: ${station.Station_Code}<br>
+            Division: ${station.Division}<br>
+            State: ${formatStateName(station.State)}
+          `);
+            markerClusterGroup.addLayer(marker);
+          }
+        });
+      }
+
       const searchInput = document.getElementById("stationSearch");
       const searchResults = document.getElementById("searchResults");
       const stationDetails = document.getElementById("stationDetails");
@@ -801,14 +763,14 @@
       function showStationDetails(station) {
         stationDetails.style.display = "block";
         stationDetails.innerHTML = `
-          <h4 class="font-semibold text-lg mb-2">${station.Station_Name}</h4>
-          <p><strong>Station Code:</strong> ${station.Station_Code}</p>
-          <p><strong>State:</strong> ${formatStateName(station.State)}</p>
-          <p><strong>Division:</strong> ${station.Division}</p>
-          <p><strong>Category:</strong> ${
-            station.Old_Station_Category || "N/A"
-          }</p>
-        `;
+        <h4 class="font-semibold text-lg mb-2">${station.Station_Name}</h4>
+        <p><strong>Station Code:</strong> ${station.Station_Code}</p>
+        <p><strong>State:</strong> ${formatStateName(station.State)}</p>
+        <p><strong>Division:</strong> ${station.Division}</p>
+        <p><strong>Category:</strong> ${
+          station.Old_Station_Category || "N/A"
+        }</p>
+      `;
 
         if (searchMarker) {
           markerClusterGroup.removeLayer(searchMarker);
@@ -823,11 +785,11 @@
             opacity: 1,
             fillOpacity: 0.8,
           }).bindPopup(`
-            <b>${station.Station_Name}</b><br>
-            Code: ${station.Station_Code}<br>
-            Division: ${station.Division}<br>
-            State: ${formatStateName(station.State)}
-          `);
+          <b>${station.Station_Name}</b><br>
+          Code: ${station.Station_Code}<br>
+          Division: ${station.Division}<br>
+          State: ${formatStateName(station.State)}
+        `);
           markerClusterGroup.addLayer(searchMarker);
           map.setView([station.Latitude, station.Longitude], 10);
           searchMarker.openPopup();
@@ -869,9 +831,6 @@
         })
         .catch((error) => {
           console.error("Error loading data:", error);
-          alert(
-            "Error loading station data. Please check the console for details."
-          );
         });
     </script>
   </body>
