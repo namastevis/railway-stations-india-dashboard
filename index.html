@@ -4,14 +4,20 @@
     <meta charset="UTF-8" />
     <meta name="viewport" content="width=device-width, initial-scale=1.0" />
     <title>Indian Railway Stations Dashboard</title>
+
+    <!-- Tailwind CSS for styling -->
     <link
       href="https://cdn.jsdelivr.net/npm/tailwindcss@2.2.19/dist/tailwind.min.css"
       rel="stylesheet"
     />
+
+    <!-- Leaflet CSS for map styling -->
     <link
       rel="stylesheet"
       href="https://unpkg.com/leaflet@1.7.1/dist/leaflet.css"
     />
+
+    <!-- Marker Cluster CSS for grouping map markers -->
     <link
       rel="stylesheet"
       href="https://unpkg.com/leaflet.markercluster@1.4.1/dist/MarkerCluster.css"
@@ -20,9 +26,14 @@
       rel="stylesheet"
       href="https://unpkg.com/leaflet.markercluster@1.4.1/dist/MarkerCluster.Default.css"
     />
+
+    <!-- Leaflet and Marker Cluster JS for map functionality -->
     <script src="https://unpkg.com/leaflet@1.7.1/dist/leaflet.js"></script>
     <script src="https://unpkg.com/leaflet.markercluster@1.4.1/dist/leaflet.markercluster.js"></script>
+
+    <!-- Chart.js for creating charts -->
     <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+
     <style>
       :root {
         /* Base size that scales with viewport width */
@@ -197,7 +208,7 @@
       <h1 class="text-xl font-bold mb-2">Indian Railway Stations Dashboard</h1>
 
       <div class="grid grid-cols-4 gap-2">
-        <!-- Filters -->
+        <!-- Filters Section -->
         <div class="col-span-1 bg-white p-3 rounded shadow">
           <div class="flex justify-between items-center mb-2">
             <h2 class="text-lg font-semibold">Filters</h2>
@@ -206,6 +217,7 @@
               class="text-blue-600 hover:text-blue-800"
               title="Reset all filters"
             >
+              <!-- Reset Filters Button -->
               <svg
                 xmlns="http://www.w3.org/2000/svg"
                 class="h-5 w-5"
@@ -267,7 +279,7 @@
           </div>
         </div>
 
-        <!-- Main Content -->
+        <!-- Main Content Section -->
         <div class="col-span-3 space-y-2">
           <!-- Map and Division Chart Row -->
           <div class="grid grid-cols-4 gap-2">
@@ -296,22 +308,25 @@
     </div>
 
     <script>
-      let stations = [];
-      let stateChart, divisionChart;
-      let markerClusterGroup;
-      let searchMarker;
+      let stations = []; // Array to hold station data
+      let stateChart, divisionChart; // Variables for charts
+      let markerClusterGroup; // Group for clustered markers on the map
+      let searchMarker; // Marker for the searched station
 
+      // Initialize the map
       const map = L.map("map").setView([23.5937, 82.9629], 5);
       L.tileLayer("https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png").addTo(
         map
       );
 
+      // Set bounds for the map
       const southWest = L.latLng(6.7, 68.1);
       const northEast = L.latLng(37.1, 97.4);
       const bounds = L.latLngBounds(southWest, northEast);
       map.setMaxBounds(bounds);
       map.on("drag", () => map.panInsideBounds(bounds, { animate: false }));
 
+      // Function to format state names
       function formatStateName(stateName) {
         return stateName
           .toLowerCase()
@@ -320,6 +335,7 @@
           .join(" ");
       }
 
+      // Function to get color based on count
       function getColor(count) {
         const colorStops = [
           { count: 5, color: [173, 216, 230] },
@@ -337,6 +353,7 @@
         return colorStops[colorStops.length - 1].color;
       }
 
+      // Function to determine marker size based on count
       function getMarkerSize(count) {
         const baseSize = 30;
         if (count <= 5) return baseSize;
@@ -347,6 +364,7 @@
         return baseSize * 2;
       }
 
+      // Initialize marker cluster group
       markerClusterGroup = L.markerClusterGroup({
         showCoverageOnHover: false,
         zoomToBoundsOnClick: true,
@@ -362,15 +380,15 @@
 
           return new L.DivIcon({
             html: `
-            <div style="
-              background-color: rgba(${r}, ${g}, ${b}, 0.8);
-              width: ${size}px;
-              height: ${size}px;
-              font-size: ${fontSize}px;
-            ">
-              <span>${childCount}</span>
-            </div>
-          `,
+              <div style="
+                background-color: rgba(${r}, ${g}, ${b}, 0.8);
+                width: ${size}px;
+                height: ${size}px;
+                font-size: ${fontSize}px;
+              ">
+                <span>${childCount}</span>
+              </div>
+            `,
             className: "marker-cluster",
             iconSize: L.point(size, size),
           });
@@ -378,6 +396,7 @@
       });
       map.addLayer(markerClusterGroup);
 
+      // Function to update charts based on filtered stations
       function updateCharts(filteredStations) {
         // Calculate data for all states first
         const allStatesData = {};
@@ -561,6 +580,7 @@
         });
       }
 
+      // Function to initialize filters
       function initializeFilters() {
         const states = [
           ...new Set(stations.map((s) => formatStateName(s.State))),
@@ -608,7 +628,7 @@
           categoryContainer.appendChild(checkboxDiv);
         });
 
-        // Add event listeners
+        // Add event listeners for filters
         document
           .getElementById("stateFilter")
           .addEventListener("change", updateDashboard);
@@ -628,6 +648,7 @@
         );
       }
 
+      // Function to update the dashboard based on selected filters
       function updateDashboard() {
         const selectedState = document.getElementById("stateFilter").value;
         const selectedDivision =
@@ -656,6 +677,7 @@
         updateCharts(filteredStations);
       }
 
+      // Function to update the map with filtered stations
       function updateMap(filteredStations) {
         markerClusterGroup.clearLayers();
 
@@ -672,20 +694,22 @@
                 fillOpacity: 0.8,
               }
             ).bindPopup(`
-            <b>${station.Station_Name}</b><br>
-            Code: ${station.Station_Code}<br>
-            Division: ${station.Division}<br>
-            State: ${formatStateName(station.State)}
-          `);
+              <b>${station.Station_Name}</b><br>
+              Code: ${station.Station_Code}<br>
+              Division: ${station.Division}<br>
+              State: ${formatStateName(station.State)}
+            `);
             markerClusterGroup.addLayer(marker);
           }
         });
       }
 
+      // Search functionality
       const searchInput = document.getElementById("stationSearch");
       const searchResults = document.getElementById("searchResults");
       const stationDetails = document.getElementById("stationDetails");
 
+      // Debounce function to limit the rate of function calls
       function debounce(func, wait) {
         let timeout;
         return function executedFunction(...args) {
@@ -698,6 +722,7 @@
         };
       }
 
+      // Handle search input
       const handleSearch = debounce((searchTerm) => {
         if (searchTerm.length < 2) {
           searchResults.classList.add("hidden");
@@ -734,10 +759,12 @@
         }
       }, 300);
 
+      // Event listener for search input
       searchInput.addEventListener("input", (e) =>
         handleSearch(e.target.value)
       );
 
+      // Event listener for search result selection
       searchResults.addEventListener("click", (e) => {
         const item = e.target.closest(".search-result-item");
         if (!item) return;
@@ -751,6 +778,7 @@
         }
       });
 
+      // Hide search results when clicking outside
       document.addEventListener("click", (e) => {
         if (
           !searchInput.contains(e.target) &&
@@ -760,17 +788,18 @@
         }
       });
 
+      // Function to show station details
       function showStationDetails(station) {
         stationDetails.style.display = "block";
         stationDetails.innerHTML = `
-        <h4 class="font-semibold text-lg mb-2">${station.Station_Name}</h4>
-        <p><strong>Station Code:</strong> ${station.Station_Code}</p>
-        <p><strong>State:</strong> ${formatStateName(station.State)}</p>
-        <p><strong>Division:</strong> ${station.Division}</p>
-        <p><strong>Category:</strong> ${
-          station.Old_Station_Category || "N/A"
-        }</p>
-      `;
+          <h4 class="font-semibold text-lg mb-2">${station.Station_Name}</h4>
+          <p><strong>Station Code:</strong> ${station.Station_Code}</p>
+          <p><strong>State:</strong> ${formatStateName(station.State)}</p>
+          <p><strong>Division:</strong> ${station.Division}</p>
+          <p><strong>Category:</strong> ${
+            station.Old_Station_Category || "N/A"
+          }</p>
+        `;
 
         if (searchMarker) {
           markerClusterGroup.removeLayer(searchMarker);
@@ -785,11 +814,11 @@
             opacity: 1,
             fillOpacity: 0.8,
           }).bindPopup(`
-          <b>${station.Station_Name}</b><br>
-          Code: ${station.Station_Code}<br>
-          Division: ${station.Division}<br>
-          State: ${formatStateName(station.State)}
-        `);
+            <b>${station.Station_Name}</b><br>
+            Code: ${station.Station_Code}<br>
+            Division: ${station.Division}<br>
+            State: ${formatStateName(station.State)}
+          `);
           markerClusterGroup.addLayer(searchMarker);
           map.setView([station.Latitude, station.Longitude], 10);
           searchMarker.openPopup();
@@ -820,7 +849,7 @@
           setTimeout(() => this.classList.remove("animate-spin"), 500);
         });
 
-      // Load initial data
+      // Load initial data from JSON file
       fetch("stations.json")
         .then((response) => response.json())
         .then((data) => {
